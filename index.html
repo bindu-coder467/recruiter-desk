@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Recruiter Desk</title>
+<style>
+:root{--bg:#f2f4f7;--surface:#fff;--ink:#14213d;--muted:#5b6578;--line:#dde2ea;--accent:#0f766e;--accent-ink:#fff;--warn:#b45309;--chip:#e6f2f0;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+:root:not([data-theme="light"]){color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#0f1624;--surface:#17203a;--ink:#e8ecf5;--muted:#9aa5bd;--line:#2a3555;--accent:#2dd4bf;--accent-ink:#06201d;--warn:#fbbf24;--chip:#12302f}}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "Segoe UI",system-ui,-apple-system,Roboto,sans-serif}
+header{padding:20px 16px 8px;max-width:980px;margin:0 auto}
+h1{font:700 26px/1.2 Georgia,"Times New Roman",serif;margin:0 0 4px;letter-spacing:-.01em}
+header p{margin:0;color:var(--muted);max-width:60ch}
+main{max-width:980px;margin:0 auto;padding:8px 16px 48px;display:grid;gap:16px}
+section{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px}
+h2{font:600 17px/1.3 Georgia,serif;margin:0 0 4px;display:flex;gap:10px;align-items:center}
+h2 b{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font:600 13px system-ui}
+.hint{color:var(--muted);margin:0 0 12px;font-size:14px}
+textarea,input[type=text]{width:100%;border:1px solid var(--line);border-radius:8px;padding:10px;background:var(--bg);color:var(--ink);font:inherit}
+textarea{min-height:150px;resize:vertical}
+textarea:focus,input:focus,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+button{font:inherit;font-weight:600;border-radius:8px;border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);padding:9px 14px;cursor:pointer}
+button.ghost{background:transparent;color:var(--accent)}
+button:disabled{opacity:.45;cursor:not-allowed}
+.chip{display:inline-flex;gap:6px;align-items:center;background:var(--chip);color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:4px 10px;font-size:13px;cursor:pointer;user-select:none}
+.chip.off{background:transparent;color:var(--muted);text-decoration:line-through}
+label.chk{display:inline-flex;gap:6px;align-items:center;font-size:14px}
+.stats{display:flex;gap:18px;flex-wrap:wrap;margin-top:12px;color:var(--muted);font-size:14px}
+.stats strong{color:var(--ink);font-size:18px;display:block}
+.tw{overflow-x:auto;margin-top:12px;border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;min-width:640px;font-size:14px}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:var(--bg);font-weight:600}
+tr:last-child td{border-bottom:0}
+.tag{font-size:12px;border:1px solid var(--line);border-radius:4px;padding:1px 6px;margin-right:4px;color:var(--muted)}
+.empty{padding:22px;text-align:center;color:var(--muted)}
+.grid2{display:grid;gap:14px}
+@media(min-width:760px){.grid2{grid-template-columns:1fr 1fr}}
+pre{white-space:pre-wrap;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:12px;margin:0;font:13px/1.5 ui-monospace,Consolas,monospace;min-height:150px}
+.note{border-left:3px solid var(--warn);padding:8px 12px;background:var(--bg);font-size:14px;margin-top:12px;border-radius:0 8px 8px 0}
+.sent{color:var(--accent);font-weight:600}
+#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90%}
+#toast.on{opacity:1}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header>
+<h1>Recruiter Desk</h1>
+<p>Paste LinkedIn posts you’ve collected, pull out recruiter contacts, and open personalised email drafts one at a time.</p>
+</header>
+<main>
+
+<section>
+<h2>LinkedIn login</h2>
+<p class="hint" id="liStat">Checking login status…</p>
+<div class="row"><a href="/auth/linkedin"><button type="button" id="liBtn">Sign in with LinkedIn</button></a><a href="/auth/logout" id="liOut" hidden><button type="button" class="ghost">Sign out</button></a></div>
+<details style="margin-top:12px"><summary style="cursor:pointer;font-weight:600">How to enable official LinkedIn OAuth</summary>
+<ol class="hint" style="padding-left:20px;margin:10px 0 0">
+<li>Go to <code>linkedin.com/developers/apps</code> and select Create app. You need a LinkedIn Page for the company or project.</li>
+<li>Open the app’s Products tab and request <b>Sign In with LinkedIn using OpenID Connect</b>.</li>
+<li>On the Auth tab, add this Authorized redirect URL: <code>http://127.0.0.1:8000/auth/linkedin/callback</code></li>
+<li>Copy the Client ID and Client Secret from the Auth tab.</li>
+<li>Set them as environment variables, then restart <code>app.py</code>:<br><code>LINKEDIN_CLIENT_ID</code> and <code>LINKEDIN_CLIENT_SECRET</code></li>
+<li>Select Sign in with LinkedIn above. Keep the secret out of the page and out of GitHub.</li>
+</ol></details>
+<div class="note">Official LinkedIn login confirms who you are and shares your name and email. It does not allow searching posts or reading recruiter emails. To find recruiters, use Open LinkedIn search below and paste the posts you copy.</div>
+</section>
+
+<section>
+<h2><b>1</b> Paste posts</h2>
+<p class="hint">Copy posts from LinkedIn search results yourself and paste them here. Separate posts with a line containing <code>---</code>.</p>
+<div class="row" style="margin:0 0 12px"><input type="text" id="role" value="Java Developer" aria-label="Job title" style="max-width:260px"><button id="liSearch">Open LinkedIn search</button><button class="ghost" id="search">Search jobs via Adzuna (optional)</button><span class="hint" style="margin:0" id="sstat">Adzuna search is optional: it uses your limited API calls and rarely includes recruiter emails. It needs app.py running.</span></div>
+<p class="hint">Or paste posts yourself:</p>
+<textarea id="posts" placeholder="Paste posts here…"></textarea>
+<div class="row"><strong style="font-size:14px">Keywords</strong><span id="kw"></span></div>
+<div class="row"><strong style="font-size:14px">Exclude words</strong><input type="text" id="exw" value="Bench, Sales, Hotlist, W2, Full-Time, Fulltime" aria-label="Exclude words" style="max-width:420px"></div>
+<div class="row">
+<label class="chk"><input type="checkbox" id="f24" checked> Posted in last 24 hours</label>
+<label class="chk"><input type="checkbox" id="fus" checked> US-based only</label>
+</div>
+<div class="row">
+<button id="parse">Extract recruiters</button><button id="aiParse">Extract with AI</button>
+<button class="ghost" id="sample">Load sample posts</button>
+<button class="ghost" id="imp">Import recruiters.csv</button><input type="file" id="csvin" accept=".csv" hidden>
+<button class="ghost" id="clear">Clear</button>
+</div>
+<div class="note">The 24-hour filter reads LinkedIn’s age tags such as “5h” or “1d” in the pasted text. Posts without one are kept and marked “age unknown”.</div>
+</section>
+
+<section>
+<h2><b>2</b> Review recruiters</h2>
+<p class="hint">Untick anyone you don’t want to contact. Duplicates are merged by email.</p>
+<div class="stats" id="stats"></div>
+<div class="tw"><table><thead><tr><th></th><th>Recruiter</th><th>Email</th><th>Role</th><th>Details</th><th>Status</th></tr></thead><tbody id="rows"></tbody></table></div>
+<div class="row"><button class="ghost" id="csv">Copy as CSV</button><button class="ghost" id="dl">Download recruiters.csv</button></div>
+<h3 style="font:600 15px Georgia,serif;margin:16px 0 4px">Do-not-contact list</h3>
+<p class="hint" style="margin-bottom:8px">Anyone who replies “stop” goes here. They are skipped in this page and in gmail_outreach.py.</p>
+<textarea id="dnc" style="min-height:70px" aria-label="Do-not-contact emails" placeholder="One email per line, or separated by commas"></textarea>
+<div class="row"><button class="ghost" id="dldnc">Download do_not_contact.txt</button></div>
+</section>
+
+<section>
+<h2><b>3</b> Email template</h2>
+<p class="hint">Placeholders: <code>{{name}}</code> <code>{{role}}</code> <code>{{your_name}}</code> <code>{{phone}}</code>. An opt-out line is always added.</p>
+<div class="grid2">
+<div>
+<input type="text" id="yn" placeholder="Your name" aria-label="Your name">
+<div style="height:8px"></div>
+<input type="text" id="ph" placeholder="Your phone (optional)" aria-label="Your phone">
+<div style="height:8px"></div>
+<input type="text" id="subj" value="Consultant available: {{role}}" aria-label="Subject">
+<div style="height:8px"></div>
+<textarea id="body" aria-label="Body">Hi {{name}},
+
+I saw your recent post about the {{role}} opening. I have a consultant whose profile may be a good fit and I’d be glad to share the details.
+
+Could you let me know the best way to send over a résumé and rate?
+
+Thanks,
+{{your_name}}
+{{phone}}</textarea>
+</div>
+<div><pre id="prev"></pre></div>
+</div>
+</section>
+
+<section>
+<h2><b>4</b> Send drafts</h2>
+<p class="hint">Each button opens a draft in your mail app. You review it and press send, so nothing goes out automatically and the volume stays human-sized.</p>
+<div class="row">
+<button id="next">Open next draft</button>
+<span id="cap" class="hint" style="margin:0"></span>
+</div>
+<div class="note">Keep it to about 20 emails a day from a personal account. Only contact people who posted a public hiring or bench request, and honour any reply asking you to stop.</div>
+</section>
+<section>
+<h2><b>5</b> Follow-ups and results</h2>
+<p class="hint">Track who you drafted, who replied, and who is due a follow-up. Your list is saved in this browser.</p>
+<div class="row"><label class="chk">Follow up after <input type="text" id="fud" value="7" style="width:56px" inputmode="numeric" aria-label="Days before follow-up"> days with no reply</label></div>
+<div class="stats" id="fstats"></div>
+<div class="tw"><table><thead><tr><th>Recruiter</th><th>Drafted</th><th>Status</th><th>Actions</th></tr></thead><tbody id="flist"></tbody></table></div>
+<div class="row"><button class="ghost" id="hcsv">Copy history as CSV</button><button class="ghost" id="reset">Reset history</button></div>
+<div class="note">Draft links open in your mail app and cannot thread under the original email. To keep the thread, reply from your Sent folder instead, or send the follow-up from the same conversation.</div>
+</section>
+</main>
+<div id="toast" role="status"></div>
+
+<script>
+var KEYWORDS=["C2C"];
+var kwOn={};KEYWORDS.forEach(function(k){kwOn[k]=true});
+var recs=[];
+var US=/\b(USA|U\.S\.|United States|AL|AK|AZ|AR|CA|CO|CT|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY|Texas|California|New York|Florida|Georgia|Virginia|Remote)\b/;
+var $=function(i){return document.getElementById(i)};
+function toast(m){var t=$("toast");t.textContent=m;t.className="on";setTimeout(function(){t.className=""},2200)}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+
+function drawKw(){
+  $("kw").innerHTML=KEYWORDS.map(function(k){return '<span class="chip'+(kwOn[k]?'':' off')+'" data-k="'+esc(k)+'" tabindex="0" role="button">'+esc(k)+'</span> '}).join("");
+}
+$("kw").addEventListener("click",function(e){var k=e.target.dataset.k;if(k){kwOn[k]=!kwOn[k];drawKw()}});
+$("kw").addEventListener("keydown",function(e){if(e.key==="Enter"||e.key===" "){var k=e.target.dataset.k;if(k){e.preventDefault();kwOn[k]=!kwOn[k];drawKw()}}});
+
+function age(t){
+  var m=t.match(/\b(\d{1,2})\s?(m|h|d|w|mo)\b/i);
+  if(!m)return null;
+  var n=+m[1],u=m[2].toLowerCase();
+  if(u==="m"||u==="h")return true;
+  if(u==="d"&&n<=1)return true;
+  return false;
+}
+function parsePost(t){
+  var emails=t.match(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g)||[];
+  if(!emails.length)return [];
+  var lines=t.split(/\n/).map(function(l){return l.trim()}).filter(Boolean);
+  var name="";
+  for(var i=0;i<lines.length;i++){
+    var m=lines[i].match(/^(?:name|recruiter|contact|regards|thanks|thank you|best)[:,\-\s]+([A-Z][a-z]+(?:\s[A-Z][a-z]+){0,2})\s*$/i);
+    if(m){name=m[1];break}
+  }
+  if(!name){
+    for(var j=0;j<lines.length;j++){
+      if(/@/.test(lines[j])&&j>0&&/^[A-Z][a-z]+(\s[A-Z][a-z]+){1,2}$/.test(lines[j-1])){name=lines[j-1];break}
+    }
+  }
+  var role=(t.match(/(?:Java|Sr\.?|Senior|Lead|Full[- ]?Stack|Backend|Python|\.NET|DevOps)[A-Za-z .\/+#-]{0,30}(?:Developer|Engineer|Architect)/i)||[""])[0].trim();
+  var ph=(t.match(/(?:\+?1[\s.-]?)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}/)||[""])[0];
+  var loc=(t.match(/\b([A-Z][a-z]+(?:\s[A-Z][a-z]+)?,\s?[A-Z]{2})\b/)||[""])[1];
+  var tags=[];["C2C","W2","1099","Full-Time","Bench","Hotlist","Remote"].forEach(function(k){if(new RegExp("\\b"+k+"\\b","i").test(t))tags.push(k)});
+  return emails.map(function(e){return{email:e.toLowerCase(),name:name,role:role||"open position",phone:ph,loc:loc,tags:tags,on:true,status:"",ageOk:age(t),jd:t.replace(/\s+/g," ").slice(0,500)}});
+}
+function extract(){
+  var posts=$("posts").value.split(/\n\s*-{3,}\s*\n/);
+  var act=KEYWORDS.filter(function(k){return kwOn[k]});
+  var seen={},out=[],skipped=0;
+  posts.forEach(function(p){
+    if(!p.trim())return;
+    if(act.length&&!act.some(function(k){return new RegExp(k.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"),"i").test(p)})){skipped++;return}
+    var ex=$("exw").value.split(",").map(function(x){return x.trim()}).filter(Boolean);
+    if(ex.some(function(w){return new RegExp("(?<!\\w)"+w.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"(?!\\w)","i").test(p)})){skipped++;return}
+    if($("f24").checked&&age(p)===false){skipped++;return}
+    if($("fus").checked&&!US.test(p)){skipped++;return}
+    parsePost(p).forEach(function(r){if(!seen[r.email]){seen[r.email]=1;out.push(r)}});
+  });
+  recs=out;draw();
+  toast(out.length+" recruiter"+(out.length===1?"":"s")+" found, "+skipped+" post"+(skipped===1?"":"s")+" filtered out");
+}
+function draw(){
+  var tb=$("rows");
+  if(!recs.length){tb.innerHTML='<tr><td colspan="6" class="empty">No recruiters yet. Paste posts above and select Extract recruiters.</td></tr>'}
+  else tb.innerHTML=recs.map(function(r,i){
+    return '<tr><td><input type="checkbox" data-i="'+i+'" '+(r.on?'checked':'')+' aria-label="Include '+esc(r.email)+'"></td>'+
+    '<td>'+esc(r.name||"—")+'</td><td>'+esc(r.email)+'</td><td>'+esc(r.role)+'</td>'+
+    '<td>'+r.tags.map(function(t){return '<span class="tag">'+esc(t)+'</span>'}).join("")+esc(r.loc)+(r.phone?'<br>'+esc(r.phone):'')+(r.ageOk===null?'<br><span class="tag">age unknown</span>':'')+'</td>'+
+    '<td>'+(blocked(r)?'<span class="tag">Do not contact</span>':r.status?'<span class="sent">'+r.status+'</span>':'<button class="ghost" data-o="'+i+'">Open draft</button>')+'</td></tr>';
+  }).join("");
+  var sel=recs.filter(function(r){return r.on}).length,dr=recs.filter(function(r){return r.status}).length;
+  $("stats").innerHTML='<div><strong>'+recs.length+'</strong>recruiters</div><div><strong>'+sel+'</strong>selected</div><div><strong>'+dr+'</strong>drafted</div>';
+  $("cap").textContent=dr+" drafted today"+(dr>=20?" — you’ve hit the suggested daily limit":"");
+  $("next").disabled=!recs.some(function(r){return r.on&&!r.status&&!blocked(r)});
+  preview();renderFollow();
+  try{localStorage.setItem("rd_recs",JSON.stringify(recs))}catch(e){}
+}
+function fill(s,r){
+  return s.replace(/\{\{name\}\}/g,r.name?r.name.split(" ")[0]:"there").replace(/\{\{role\}\}/g,r.role).replace(/\{\{your_name\}\}/g,$("yn").value||"[your name]").replace(/\{\{phone\}\}/g,$("ph").value);
+}
+function compose(r){
+  var body=fill($("body").value,r).trim()+"\n\n—\nNot relevant? Reply “stop” and I won’t contact you again.";
+  return{subject:fill($("subj").value,r),body:body};
+}
+function preview(){
+  var r=recs.find(function(x){return x.on})||{name:"Alex",role:"Java Developer",email:"alex@example.com"};
+  var c=compose(r);
+  $("prev").textContent="To: "+r.email+"\nSubject: "+c.subject+"\n\n"+c.body;
+}
+function openDraft(i){
+  var r=recs[i];if(blocked(r)){toast("On the do-not-contact list");return}
+  var c=compose(r);
+  location.href="mailto:"+r.email+"?subject="+encodeURIComponent(c.subject)+"&body="+encodeURIComponent(c.body);
+  r.status="Drafted";r.sentAt=Date.now();draw();
+}
+$("rows").addEventListener("click",function(e){
+  if(e.target.dataset.o!==undefined)openDraft(+e.target.dataset.o);
+});
+$("rows").addEventListener("change",function(e){
+  if(e.target.dataset.i!==undefined){recs[+e.target.dataset.i].on=e.target.checked;draw()}
+});
+$("next").onclick=function(){var i=recs.findIndex(function(r){return r.on&&!r.status&&!blocked(r)});if(i>=0)openDraft(i)};
+$("parse").onclick=extract;
+$("clear").onclick=function(){$("posts").value="";recs=[];draw()};
+$("csv").onclick=function(){
+  var rows=[["name","email","role","phone","location","tags"]].concat(recs.filter(function(r){return r.on}).map(function(r){return[r.name,r.email,r.role,r.phone,r.loc,r.tags.join("|")]}));
+  var t=rows.map(function(r){return r.map(function(c){return '"'+String(c||"").replace(/"/g,'""')+'"'}).join(",")}).join("\n");
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(function(){toast("CSV copied")},function(){toast("Copy blocked by the browser")})}else toast("Copy not supported here");
+};
+["yn","ph","subj","body"].forEach(function(id){$(id).addEventListener("input",preview)});
+$("sample").onclick=function(){
+  $("posts").value="Priya Raman\nHiring: Java Developer – C2C / W2 – Dallas, TX\n3h\nNeed a Sr. Java Developer, Spring Boot, Microservices. Full-Time or C2C.\nEmail: priya.raman@examplestaffing.com\n(214) 555-0142\n---\nMark Ellis\nBench Sales | Hotlist update\n1d\nJava Developer available on W2, Remote, USA. Reach me at mark@examplebench.com\n---\nSam Carter\nOld post: .NET Engineer needed\n2w\nsam@oldpost.example.com, Austin, TX\n---\nRavi K\nJava Developer C2C, Toronto, Canada\n5h\nravi@exampleca.com";
+  toast("Sample loaded");
+};
+function parseCsv(t){var rows=[],row=[],cur="",q=false;for(var i=0;i<t.length;i++){var c=t[i];if(q){if(c=='"'){if(t[i+1]=='"'){cur+='"';i++}else q=false}else cur+=c}else if(c=='"')q=true;else if(c===","){row.push(cur);cur=""}else if(c==="\n"||c==="\r"){if(c==="\r"&&t[i+1]==="\n")i++;row.push(cur);rows.push(row);row=[];cur=""}else cur+=c}if(cur||row.length){row.push(cur);rows.push(row)}return rows}
+$("imp").onclick=function(){$("csvin").click()};
+$("csvin").onchange=function(e){
+  var f=e.target.files[0];if(!f)return;
+  var fr=new FileReader();
+  fr.onload=function(){
+    var rows=parseCsv(fr.result),h=rows.shift()||[],ix=function(n){return h.indexOf(n)};
+    var have={};recs.forEach(function(r){have[r.email]=1});
+    var add=0,noMail=0;
+    rows.forEach(function(c){
+      var em=(c[ix("recruiter_email")]||"").trim().toLowerCase();
+      if(!em){noMail++;return}
+      if(have[em])return;have[em]=1;add++;
+      recs.push({email:em,name:c[ix("recruiter_name")]||"",role:c[ix("role")]||"open position",phone:"",loc:"",tags:[],on:true,status:"",ageOk:true});
+    });
+    draw();toast(add+" imported, "+noMail+" skipped (no email)");
+  };
+  fr.readAsText(f);e.target.value="";
+};
+function days(r){return Math.floor((Date.now()-r.sentAt)/86400000)}
+function renderFollow(){
+  var d=recs.filter(function(r){return r.status}),rep=d.filter(function(r){return r.replied}).length,fu=d.filter(function(r){return r.fu}).length;
+  var n=parseInt($("fud").value,10)||7;
+  var due=d.filter(function(r){return !r.replied&&!r.fu&&days(r)>=n}).length;
+  $("fstats").innerHTML='<div><strong>'+d.length+'</strong>drafted</div><div><strong>'+rep+'</strong>replied</div><div><strong>'+(d.length?Math.round(rep/d.length*100):0)+'%</strong>reply rate</div><div><strong>'+due+'</strong>follow-ups due</div><div><strong>'+fu+'</strong>follow-ups drafted</div>';
+  $("flist").innerHTML=d.length?d.map(function(r){
+    var i=recs.indexOf(r),dd=days(r),st=r.replied?'<span class="sent">Replied</span>':(r.fu?'Follow-up drafted':(dd>=n?'Follow-up due':'Waiting ('+(n-dd)+' days left)'));
+    var act=r.replied?'':'<button class="ghost" data-rep="'+i+'">Mark replied</button> '+(!r.fu&&dd>=n?'<button data-fu="'+i+'">Open follow-up</button>':'');
+    return '<tr><td>'+esc(r.name||r.email)+'<br><span class="hint" style="margin:0">'+esc(r.email)+'</span></td><td>'+new Date(r.sentAt).toLocaleDateString()+'</td><td>'+st+'</td><td>'+act+'</td></tr>';
+  }).join(""):'<tr><td colspan="4" class="empty">Nothing drafted yet. Open a draft in step 4 and it will appear here.</td></tr>';
+}
+$("fud").addEventListener("input",renderFollow);
+$("flist").addEventListener("click",function(e){
+  var t=e.target;
+  if(t.dataset.rep!==undefined){var r=recs[+t.dataset.rep];r.replied=true;draw();return}
+  if(t.dataset.fu!==undefined){
+    var x=recs[+t.dataset.fu],c=compose(x),dd=days(x);
+    var b="Hi "+(x.name?x.name.split(" ")[0]:"there")+",\n\nFollowing up on my note from "+dd+" days ago about the "+x.role+" role. Happy to share the profile whenever it is useful.\n\nThanks,\n"+($("yn").value||"[your name]")+"\n\n—\nNot relevant? Reply “stop” and I won’t contact you again.";
+    x.fu=(x.fu||0)+1;draw();
+    location.href="mailto:"+x.email+"?subject="+encodeURIComponent("Re: "+c.subject)+"&body="+encodeURIComponent(b);
+  }
+});
+$("hcsv").onclick=function(){
+  var rows=[["name","email","role","drafted_on","replied","followups"]].concat(recs.filter(function(r){return r.status}).map(function(r){return[r.name,r.email,r.role,new Date(r.sentAt).toISOString().slice(0,10),r.replied?1:0,r.fu||0]}));
+  var t=rows.map(function(r){return r.map(function(c){return '"'+String(c==null?"":c).replace(/"/g,'""')+'"'}).join(",")}).join("\n");
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(function(){toast("History copied")},function(){toast("Copy blocked by the browser")})}else toast("Copy not supported here");
+};
+$("reset").onclick=function(){if(confirm("Delete all recruiters and history?")){recs=[];draw()}};
+try{var sv=localStorage.getItem("rd_recs");if(sv)recs=JSON.parse(sv)||[]}catch(e){recs=[]}
+$("search").onclick=function(){
+  var kw=KEYWORDS.filter(function(k){return kwOn[k]}).join(",");
+  $("sstat").textContent="Searching…";
+  fetch("/api/search?what="+encodeURIComponent($("role").value)+"&kw="+encodeURIComponent(kw)+"&ex="+encodeURIComponent($("exw").value)).then(function(r){return r.json()}).then(function(d){
+    if(d.error)throw new Error(d.error);
+    var have={};recs.forEach(function(r){have[r.email]=1});var add=0;
+    d.jobs.forEach(function(j){if(!j.email||have[j.email])return;have[j.email]=1;add++;recs.push({email:j.email,name:j.company,role:j.title,phone:"",loc:j.location,tags:j.tags,on:true,status:"",ageOk:true})});
+    draw();$("sstat").textContent=d.total+" listings kept, "+add+" with a recruiter email";
+  }).catch(function(e){$("sstat").textContent="Search failed: "+e.message+". Is app.py running?"});
+};
+(function(){
+  var q=new URLSearchParams(location.search).get("li");
+  var msg={unconfigured:"LinkedIn OAuth is not set up yet. Follow the steps below.",error:"LinkedIn sign-in failed. Check the redirect URL and credentials, then try again."}[q];
+  fetch("/api/me").then(function(r){return r.json()}).then(function(d){
+    if(d.user){
+      $("liStat").textContent="Signed in as "+(d.user.name||"LinkedIn user")+(d.user.email?" ("+d.user.email+")":"");
+      $("liBtn").parentNode.hidden=true;$("liOut").hidden=false;
+      if(d.user.name&&!$("yn").value){$("yn").value=d.user.name;preview()}
+    }else $("liStat").textContent=msg||(d.configured?"Not signed in.":"LinkedIn OAuth is not set up yet. Follow the steps below.");
+  }).catch(function(){$("liStat").textContent="Login needs app.py running on your computer.";$("liBtn").disabled=true});
+})();
+$("liSearch").onclick=function(){
+  var seen={},ex=[];
+  $("exw").value.split(",").forEach(function(w){
+    w=w.trim().replace(/[\s-]+/g,"");
+    if(w&&!seen[w.toLowerCase()]){seen[w.toLowerCase()]=1;ex.push("-"+w)}
+  });
+  var q=($("role").value||"Java Developer")+" C2C "+ex.join(" ");
+  var url="https://www.linkedin.com/search/results/content/?keywords="+encodeURIComponent(q.trim())+"&datePosted=%22past-24h%22&sortBy=%22date_posted%22";
+  window.open(url,"_blank","noopener");
+  toast("LinkedIn opened. Copy the posts you want, then paste them below.");
+};
+$("aiParse").onclick=function(){
+  var posts=$("posts").value.split(/\n\s*-{3,}\s*\n/).map(function(x){return x.trim()}).filter(Boolean);
+  if(!posts.length){toast("Paste some posts first");return}
+  var btn=$("aiParse");btn.disabled=true;toast("Reading "+posts.length+" posts with AI. This can take a minute.");
+  fetch("/api/extract",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({posts:posts,exclude:$("exw").value})})
+  .then(function(r){return r.json()}).then(function(d){
+    if(d.error)throw new Error(d.error);
+    var have={};recs.forEach(function(r){have[r.email]=1});var add=0;
+    d.rows.forEach(function(r){
+      if(!r.recruiter_email||have[r.recruiter_email])return;have[r.recruiter_email]=1;add++;
+      recs.push({email:r.recruiter_email,name:r.recruiter_name,role:r.role||"open position",phone:r.phone,loc:r.location,tags:r.employment_type?[r.employment_type]:[],on:true,status:"",ageOk:null,jd:r.job_description||""});
+    });
+    draw();toast(add+" recruiters added. "+d.stats.fallback+" used the basic fallback.");
+  }).catch(function(e){toast("AI extract failed: "+e.message)}).then(function(){btn.disabled=false});
+};
+function dncList(){return $("dnc").value.split(/[,\s]+/).map(function(x){return x.trim().toLowerCase()}).filter(Boolean)}
+function blocked(r){return dncList().indexOf(r.email)>-1}
+function download(name,text,type){var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type:type}));a.download=name;document.body.appendChild(a);a.click();a.remove()}
+$("dnc").addEventListener("input",function(){try{localStorage.setItem("rd_dnc",$("dnc").value)}catch(e){}draw()});
+try{var sd=localStorage.getItem("rd_dnc");if(sd)$("dnc").value=sd}catch(e){}
+$("dldnc").onclick=function(){download("do_not_contact.txt",dncList().join("\n")+"\n","text/plain")};
+$("dl").onclick=function(){
+  var list=recs.filter(function(r){return r.on&&!blocked(r)});
+  if(!list.length){toast("No selected recruiters to export");return}
+  var ts=new Date().toISOString().slice(0,19).replace("T"," ");
+  var rows=[["recruiter_name","recruiter_email","role","post_url","job_description","email_sent_status","timestamp","phone","location"]].concat(list.map(function(r){return[r.name,r.email,r.role,"",r.jd||"","pending",ts,r.phone,r.loc]}));
+  var t=rows.map(function(r){return r.map(function(c){return '"'+String(c==null?"":c).replace(/"/g,'""')+'"'}).join(",")}).join("\n");
+  download("recruiters.csv",t,"text/csv");
+  toast(list.length+" recruiters saved. Put the file next to gmail_outreach.py.");
+};
+drawKw();draw();
+</script>
+</body>
+</html>
